@@ -16,8 +16,7 @@ fn main() {
 
     let mut stream_list = StreamList::new();
     stream_list.create_from_ids(stream_ids);
-    stream_list.fetch_all();
-    stream_list.show_all();
+    stream_list.fetch_all_and_show();
 
     main_menu(&mut stream_list);
 }
