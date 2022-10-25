@@ -1,5 +1,5 @@
 use twitch_online::StreamList;
-use twitch_online::{main_menu, read_users};
+use twitch_online::{main_menu, play_stream, read_users};
 extern crate directories;
 use directories::UserDirs;
 
@@ -11,12 +11,16 @@ fn main() {
             None => panic!("Can't find home dir!"),
         }
     }
+    // TODO: is there a way to concatenate it in a nicer way ?
     let path = format!("{}/.config/twitch_online/users", home);
+
     let stream_ids = read_users(&path).expect("Error while reading users");
 
+    // TODO: combine new and create_from_ids ?
     let mut stream_list = StreamList::new();
     stream_list.create_from_ids(stream_ids);
-    stream_list.fetch_all_and_show();
 
+    stream_list.fetch_all();
+    play_stream(&stream_list);
     main_menu(&mut stream_list);
 }

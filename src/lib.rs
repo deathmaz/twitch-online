@@ -4,13 +4,23 @@ use ansi_term::{
 };
 use scraper::{Html, Selector};
 use serde_json::Value;
-use std::error::Error;
-use std::fs;
-use std::io;
 use std::process::{Command, Output};
+use std::{
+    error::Error,
+    sync::mpsc::{Receiver, Sender},
+};
+use std::{fs, mem, thread};
+use std::{io, sync::mpsc};
 
 pub fn fetch_page(url: &str) -> io::Result<Output> {
+    // TODO: is there a more `native` way to make http requests?
     Command::new("curl").arg("-s").arg("-S").arg(url).output()
+}
+#[derive(Debug)]
+pub struct ChannelData {
+    description: String,
+    is_live: bool,
+    url: String,
 }
 
 #[derive(Debug)]
@@ -33,35 +43,6 @@ impl Stream {
         }
     }
 
-    pub fn fetch(&mut self) {
-        println!("Please wait, trying to fetch {}", &self.url);
-
-        let output = fetch_page(&self.url);
-        match output {
-            Ok(result) => {
-                let page_output_string = String::from_utf8(result.stdout).unwrap();
-                let document = Html::parse_document(&page_output_string);
-                let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
-                match document.select(&selector).next() {
-                    Some(script) => {
-                        let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
-
-                        self.is_live = v[0]["publication"]["isLiveBroadcast"]
-                            .as_bool()
-                            .unwrap_or_else(|| false);
-
-                        self.description = v[0]["description"]
-                            .as_str()
-                            .unwrap_or_else(|| "No Description")
-                            .to_string();
-                    }
-                    None => (),
-                }
-            }
-            Err(e) => println!("Error, {}", e),
-        }
-    }
-
     fn status_text(&self) -> ANSIGenericString<str> {
         match self.is_live {
             true => Green.bold().paint("live"),
@@ -78,6 +59,41 @@ impl Stream {
         );
         println!("Streaming: {}", Purple.paint(self.description.to_string()));
         println!("");
+    }
+}
+
+pub fn fetch(url: &str, tx: Sender<ChannelData>) {
+    let output = fetch_page(url);
+    match output {
+        Ok(result) => {
+            // TODO: properly deal with possible errors
+            let page_output_string = String::from_utf8(result.stdout).unwrap();
+            let document = Html::parse_document(&page_output_string);
+            let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
+            match document.select(&selector).next() {
+                Some(script) => {
+                    let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
+
+                    let is_live = v[0]["publication"]["isLiveBroadcast"]
+                        .as_bool()
+                        .unwrap_or_else(|| false);
+
+                    let description = v[0]["description"]
+                        .as_str()
+                        .unwrap_or_else(|| "No Description")
+                        .to_string();
+
+                    tx.send(ChannelData {
+                        description,
+                        is_live,
+                        url: url.to_string(),
+                    })
+                    .unwrap();
+                }
+                None => (),
+            }
+        }
+        Err(e) => println!("Error, {}", e),
     }
 }
 
@@ -102,16 +118,34 @@ impl StreamList {
     }
 
     pub fn fetch_all(&mut self) {
+        let (tx, rx) = mpsc::channel();
         println!("");
         println!("Fetching all streams");
         for stream in &mut self.inner {
-            stream.fetch();
+            let tx_cloned = tx.clone();
+            // TODO: how to do it without clone?
+            let url = stream.url.clone();
+            thread::spawn(move || {
+                fetch(&url, tx_cloned);
+            });
+        }
+
+        mem::drop(tx);
+
+        for data in rx {
+            for stream in &mut self.inner {
+                if stream.url == data.url {
+                    // TODO: how to do this without clone?
+                    stream.description = data.description.clone();
+                    stream.is_live = data.is_live;
+                }
+            }
         }
     }
 
     pub fn fetch_all_and_show(&mut self) {
         self.fetch_all();
-        self.show_all();
+        self.show_only_live();
     }
 
     pub fn show_all(&mut self) {
@@ -181,7 +215,7 @@ pub fn main_menu(stream_list: &mut StreamList) {
     }
 }
 
-fn play_stream(stream_list: &StreamList) {
+pub fn play_stream(stream_list: &StreamList) {
     stream_list.show_only_live();
     println!("Type the number of the stream:");
     let number = match get_stream_number() {
@@ -193,11 +227,8 @@ fn play_stream(stream_list: &StreamList) {
     match stream {
         Some(str) => {
             println!("Starting stream: {}", &str.url);
-            match Command::new("streamlink")
-                .arg("--player=mpv")
-                .arg(&str.url)
-                .output()
-            {
+            // TODO: don't block everything when starting new stream
+            match Command::new("streamlink").arg(&str.url).output() {
                 Ok(_) => println!("Done!"),
                 Err(e) => println!("Error while running the stream {}", e),
             };
