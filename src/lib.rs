@@ -5,10 +5,7 @@ use ansi_term::{
 use scraper::{Html, Selector};
 use serde_json::Value;
 use std::process::{Command, Output};
-use std::{
-    error::Error,
-    sync::mpsc::{Receiver, Sender},
-};
+use std::{error::Error, sync::mpsc::Sender};
 use std::{fs, mem, thread};
 use std::{io, sync::mpsc};
 
