@@ -42,17 +42,21 @@ impl Stream {
                 let page_output_string = String::from_utf8(result.stdout).unwrap();
                 let document = Html::parse_document(&page_output_string);
                 let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
-                let script = document.select(&selector).next().unwrap();
-                let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
+                match document.select(&selector).next() {
+                    Some(script) => {
+                        let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
 
-                self.is_live = v[0]["publication"]["isLiveBroadcast"]
-                    .as_bool()
-                    .unwrap_or_else(|| false);
+                        self.is_live = v[0]["publication"]["isLiveBroadcast"]
+                            .as_bool()
+                            .unwrap_or_else(|| false);
 
-                self.description = v[0]["description"]
-                    .as_str()
-                    .unwrap_or_else(|| "No Description")
-                    .to_string();
+                        self.description = v[0]["description"]
+                            .as_str()
+                            .unwrap_or_else(|| "No Description")
+                            .to_string();
+                    }
+                    None => (),
+                }
             }
             Err(e) => println!("Error, {}", e),
         }
