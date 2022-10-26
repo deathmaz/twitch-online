@@ -12,7 +12,7 @@ fn main() {
         }
     }
     // TODO: is there a way to concatenate it in a nicer way ?
-    let path = format!("{}/.config/twitch_online/users", home);
+    let path = format!("{}/.config/twitch-online/users", home);
 
     let stream_ids = read_users(&path).expect("Error while reading users");
 

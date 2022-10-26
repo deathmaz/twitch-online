@@ -124,7 +124,7 @@ impl StreamList {
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
         println!();
-        // TODO: add loading animation
+        // ODO: add loading animation
         println!("Fetching all streams...");
         for stream in &mut self.inner {
             let tx_cloned = tx.clone();
