@@ -125,8 +125,7 @@ impl StreamList {
         println!("Fetching all streams...");
         for stream in &mut self.inner {
             let tx_cloned = tx.clone();
-            // TODO: how to do it without clone?
-            let url = stream.url.clone();
+            let url = String::from(&stream.url);
             thread::spawn(move || {
                 fetch(&url, tx_cloned);
             });
@@ -137,8 +136,7 @@ impl StreamList {
         for data in rx {
             for stream in &mut self.inner {
                 if stream.url == data.url {
-                    // TODO: how to do this without clone?
-                    stream.description = data.description.clone();
+                    stream.description = String::from(&data.description);
                     stream.is_live = data.is_live;
                 }
             }
