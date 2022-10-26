@@ -53,7 +53,7 @@ impl Stream {
             self.status_text()
         );
         println!("Streaming: {}", Purple.paint(self.description.to_string()));
-        println!("");
+        println!();
     }
 }
 
@@ -65,27 +65,24 @@ pub fn fetch(url: &str, tx: Sender<ChannelData>) {
             let page_output_string = String::from_utf8(result.stdout).unwrap();
             let document = Html::parse_document(&page_output_string);
             let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
-            match document.select(&selector).next() {
-                Some(script) => {
-                    let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
+            if let Some(script) = document.select(&selector).next() {
+                let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
 
-                    let is_live = v[0]["publication"]["isLiveBroadcast"]
-                        .as_bool()
-                        .unwrap_or_else(|| false);
+                let is_live = v[0]["publication"]["isLiveBroadcast"]
+                    .as_bool()
+                    .unwrap_or(false);
 
-                    let description = v[0]["description"]
-                        .as_str()
-                        .unwrap_or_else(|| "No Description")
-                        .to_string();
+                let description = v[0]["description"]
+                    .as_str()
+                    .unwrap_or("No Description")
+                    .to_string();
 
-                    tx.send(ChannelData {
-                        description,
-                        is_live,
-                        url: url.to_string(),
-                    })
-                    .unwrap();
-                }
-                None => (),
+                tx.send(ChannelData {
+                    description,
+                    is_live,
+                    url: url.to_string(),
+                })
+                .unwrap();
             }
         }
         Err(e) => println!("Error, {}", e),
@@ -95,6 +92,12 @@ pub fn fetch(url: &str, tx: Sender<ChannelData>) {
 #[derive(Debug)]
 pub struct StreamList {
     inner: Vec<Stream>,
+}
+
+impl Default for StreamList {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl StreamList {
@@ -120,7 +123,7 @@ impl StreamList {
 
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
-        println!("");
+        println!();
         // TODO: add loading animation
         println!("Fetching all streams...");
         for stream in &mut self.inner {
@@ -151,7 +154,7 @@ impl StreamList {
     }
 
     pub fn show_all(&mut self) {
-        println!("");
+        println!();
         println!("Displaying all data:");
         self.inner.sort_by(|a, b| b.is_live.cmp(&a.is_live));
         for stream in &self.inner {
@@ -185,7 +188,7 @@ pub fn get_input() -> Option<String> {
     }
 
     let input = buffer.trim().to_owned();
-    if &input == "" {
+    if input.is_empty() {
         None
     } else {
         Some(input)
@@ -194,13 +197,13 @@ pub fn get_input() -> Option<String> {
 
 pub fn main_menu(stream_list: &mut StreamList) {
     fn show() {
-        println!("");
+        println!();
         println!("== What would you like to do? ==");
         println!("1. View List");
         println!("2. Refetch data");
         println!("3. Play stream");
         println!("4. Show only live streams");
-        println!("");
+        println!();
         println!("Enter selection:")
     }
 
@@ -221,8 +224,8 @@ pub fn main_menu(stream_list: &mut StreamList) {
 }
 
 pub fn play_stream(stream_list: &mut StreamList) {
-    if stream_list.get_live_streams().len() == 0 {
-        println!("");
+    if stream_list.get_live_streams().is_empty() {
+        println!();
         println!("No live streams avaliable.");
         return;
     }
@@ -255,7 +258,7 @@ fn get_stream_number() -> Option<u32> {
             Some(input) => input,
             None => return None,
         };
-        if &input == "" {
+        if input.is_empty() {
             return None;
         }
         let parsed_input: Result<u32, _> = input.parse();
