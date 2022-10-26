@@ -4,15 +4,13 @@ use ansi_term::{
 };
 use scraper::{Html, Selector};
 use serde_json::Value;
-use std::process::{Command, Output, Stdio};
+use std::process::{Command, Stdio};
 use std::{error::Error, sync::mpsc::Sender};
 use std::{fs, mem, thread};
 use std::{io, sync::mpsc};
+extern crate reqwest;
+use std::io::Read;
 
-pub fn fetch_page(url: &str) -> io::Result<Output> {
-    // TODO: is there a more `native` way to make http requests?
-    Command::new("curl").arg("-s").arg("-S").arg(url).output()
-}
 #[derive(Debug)]
 pub struct ChannelData {
     description: String,
@@ -58,12 +56,14 @@ impl Stream {
 }
 
 pub fn fetch(url: &str, tx: Sender<ChannelData>) {
-    let output = fetch_page(url);
+    let output = reqwest::blocking::get(url);
+
     match output {
-        Ok(result) => {
+        Ok(mut result) => {
             // TODO: properly deal with possible errors
-            let page_output_string = String::from_utf8(result.stdout).unwrap();
-            let document = Html::parse_document(&page_output_string);
+            let mut body = String::new();
+            result.read_to_string(&mut body).unwrap();
+            let document = Html::parse_document(&body);
             let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
             match document.select(&selector).next() {
                 Some(script) => {
