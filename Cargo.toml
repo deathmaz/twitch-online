@@ -1,8 +1,11 @@
 [package]
-name = "twitch_online"
+name = "twitch-online"
 version = "0.1.0"
 authors = ["deathmaz <00maz1987@gmail.com>"]
-edition = "2018"
+edition = "2021"
+
+[[bin]]
+name = "twitch-online"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

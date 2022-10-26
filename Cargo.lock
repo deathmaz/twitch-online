@@ -683,7 +683,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "twitch_online"
+name = "twitch-online"
 version = "0.1.0"
 dependencies = [
  "ansi_term",
