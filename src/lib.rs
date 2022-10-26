@@ -207,7 +207,7 @@ pub fn main_menu(stream_list: &mut StreamList) {
             "2" => stream_list.fetch_all_and_show(),
             "3" => play_stream(&stream_list),
             "4" => stream_list.show_only_live(),
-            _ => break,
+            _ => continue,
         }
     }
 }
