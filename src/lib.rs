@@ -4,7 +4,7 @@ use ansi_term::{
 };
 use scraper::{Html, Selector};
 use serde_json::Value;
-use std::process::{Command, Output};
+use std::process::{Command, Output, Stdio};
 use std::{error::Error, sync::mpsc::Sender};
 use std::{fs, mem, thread};
 use std::{io, sync::mpsc};
@@ -22,7 +22,6 @@ pub struct ChannelData {
 
 #[derive(Debug)]
 pub struct Stream {
-    id: String,
     url: String,
     is_live: bool,
     description: String,
@@ -32,7 +31,6 @@ pub struct Stream {
 impl Stream {
     pub fn new(id: &str, index: usize) -> Self {
         Self {
-            id: id.to_owned(),
             url: format!("https://m.twitch.tv/{}", id),
             is_live: false,
             description: String::new(),
@@ -51,7 +49,7 @@ impl Stream {
         println!(
             "{} {} is {}",
             Green.bold().paint(format!("{}.", self.index)),
-            Blue.underline().paint(&self.url),
+            Blue.paint(&self.url),
             self.status_text()
         );
         println!("Streaming: {}", Purple.paint(self.description.to_string()));
@@ -104,6 +102,12 @@ impl StreamList {
         Self { inner: Vec::new() }
     }
 
+    pub fn from(ids: Vec<String>) -> Self {
+        let mut list = Self::new();
+        list.create_from_ids(ids);
+        list
+    }
+
     pub fn add(&mut self, stream: Stream) {
         self.inner.push(stream)
     }
@@ -117,7 +121,8 @@ impl StreamList {
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
         println!("");
-        println!("Fetching all streams");
+        // TODO: add loading animation
+        println!("Fetching all streams...");
         for stream in &mut self.inner {
             let tx_cloned = tx.clone();
             // TODO: how to do it without clone?
@@ -138,6 +143,8 @@ impl StreamList {
                 }
             }
         }
+
+        self.inner.sort_by(|a, b| a.index.cmp(&b.index));
     }
 
     pub fn fetch_all_and_show(&mut self) {
@@ -160,13 +167,16 @@ impl StreamList {
             .find(|&stream| stream.index == (index as usize))
     }
 
-    pub fn show_only_live(&self) {
-        let live_streams: Vec<&Stream> =
-            self.inner.iter().filter(|stream| stream.is_live).collect();
+    pub fn show_only_live(&mut self) {
+        let live_streams = self.get_live_streams();
 
         for stream in live_streams {
             stream.show()
         }
+    }
+
+    pub fn get_live_streams(&self) -> Vec<&Stream> {
+        self.inner.iter().filter(|stream| stream.is_live).collect()
     }
 }
 
@@ -205,14 +215,19 @@ pub fn main_menu(stream_list: &mut StreamList) {
         match input.as_str() {
             "1" => stream_list.show_all(),
             "2" => stream_list.fetch_all_and_show(),
-            "3" => play_stream(&stream_list),
+            "3" => play_stream(stream_list),
             "4" => stream_list.show_only_live(),
             _ => continue,
         }
     }
 }
 
-pub fn play_stream(stream_list: &StreamList) {
+pub fn play_stream(stream_list: &mut StreamList) {
+    if stream_list.get_live_streams().len() == 0 {
+        println!("");
+        println!("No live streams avaliable.");
+        return;
+    }
     stream_list.show_only_live();
     println!("Type the number of the stream:");
     let number = match get_stream_number() {
@@ -224,10 +239,12 @@ pub fn play_stream(stream_list: &StreamList) {
     match stream {
         Some(str) => {
             println!("Starting stream: {}", &str.url);
-            // TODO: don't block everything when starting new stream
-            match Command::new("streamlink").arg(&str.url).output() {
-                Ok(_) => println!("Done!"),
-                Err(e) => println!("Error while running the stream {}", e),
+            if let Err(e) = Command::new("streamlink")
+                .arg(&str.url)
+                .stdout(Stdio::null())
+                .spawn()
+            {
+                println!("Error while running the stream {}", e);
             };
         }
         None => println!("The stream is missing"),

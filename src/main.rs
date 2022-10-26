@@ -16,11 +16,9 @@ fn main() {
 
     let stream_ids = read_users(&path).expect("Error while reading users");
 
-    // TODO: combine new and create_from_ids ?
-    let mut stream_list = StreamList::new();
-    stream_list.create_from_ids(stream_ids);
+    let mut stream_list = StreamList::from(stream_ids);
 
     stream_list.fetch_all();
-    play_stream(&stream_list);
+    play_stream(&mut stream_list);
     main_menu(&mut stream_list);
 }
