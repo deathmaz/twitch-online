@@ -280,3 +280,11 @@ pub fn read_users(path: &String) -> Result<Vec<String>, Box<dyn Error>> {
     }
     Ok(lines)
 }
+
+pub fn run(stream_ids: Vec<String>) {
+    let mut stream_list = StreamList::from(stream_ids);
+
+    stream_list.fetch_all();
+    play_stream(&mut stream_list);
+    main_menu(&mut stream_list);
+}

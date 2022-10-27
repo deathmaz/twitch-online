@@ -1,5 +1,4 @@
-use twitch_online::StreamList;
-use twitch_online::{main_menu, play_stream, read_users};
+use twitch_online::{read_users, run};
 extern crate directories;
 use directories::UserDirs;
 
@@ -15,10 +14,5 @@ fn main() {
     let path = format!("{}/.config/twitch-online/users", home);
 
     let stream_ids = read_users(&path).expect("Error while reading users");
-
-    let mut stream_list = StreamList::from(stream_ids);
-
-    stream_list.fetch_all();
-    play_stream(&mut stream_list);
-    main_menu(&mut stream_list);
+    run(stream_ids);
 }
