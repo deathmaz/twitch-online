@@ -4,6 +4,7 @@ use ansi_term::{
 };
 use scraper::{Html, Selector};
 use serde_json::Value;
+use spinners::Spinner;
 use std::process::{Command, Output, Stdio};
 use std::{error::Error, sync::mpsc::Sender};
 use std::{fs, mem, thread};
@@ -124,8 +125,7 @@ impl StreamList {
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
         println!();
-        // ODO: add loading animation
-        println!("Fetching all streams...");
+        let mut sp = Spinner::new(spinners::Spinners::Dots, "Fetching all streams".into());
         for stream in &mut self.inner {
             let tx_cloned = tx.clone();
             let url = String::from(&stream.url);
@@ -146,6 +146,8 @@ impl StreamList {
         }
 
         self.inner.sort_by(|a, b| a.index.cmp(&b.index));
+
+        sp.stop_with_message("".into());
     }
 
     pub fn fetch_all_and_show(&mut self) {
