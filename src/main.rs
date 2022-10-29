@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use twitch_online::{read_users, run};
 extern crate directories;
 use directories::UserDirs;
@@ -10,9 +12,8 @@ fn main() {
             None => panic!("Can't find home dir!"),
         }
     }
-    // TODO: is there a way to concatenate it in a nicer way ?
-    let path = format!("{}/.config/twitch-online/users", home);
+    let path = PathBuf::from(format!("{}/.config/twitch-online/users", home));
 
-    let stream_ids = read_users(&path).expect("Error while reading users");
+    let stream_ids = read_users(&path.display().to_string()).expect("Error while reading users");
     run(stream_ids);
 }
