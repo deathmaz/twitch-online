@@ -66,25 +66,26 @@ pub fn fetch(url: &str, tx: Sender<ChannelData>) {
             let page_output_string = String::from_utf8(result.stdout).unwrap();
             let document = Html::parse_document(&page_output_string);
             let selector = Selector::parse(r#"script[type="application/ld+json"]"#).unwrap();
+            let mut is_live = false;
+            let mut description = String::from("No description");
             if let Some(script) = document.select(&selector).next() {
                 let v: Value = serde_json::from_str(script.inner_html().as_str()).unwrap();
 
-                let is_live = v[0]["publication"]["isLiveBroadcast"]
+                is_live = v[0]["publication"]["isLiveBroadcast"]
                     .as_bool()
                     .unwrap_or(false);
 
-                let description = v[0]["description"]
+                description = v[0]["description"]
                     .as_str()
                     .unwrap_or("No Description")
                     .to_string();
-
-                tx.send(ChannelData {
-                    description,
-                    is_live,
-                    url: url.to_string(),
-                })
-                .unwrap();
             }
+            tx.send(ChannelData {
+                description,
+                is_live,
+                url: url.to_string(),
+            })
+            .unwrap();
         }
         Err(e) => println!("Error, {}", e),
     }
@@ -137,11 +138,9 @@ impl StreamList {
         mem::drop(tx);
 
         for data in rx {
-            for stream in &mut self.inner {
-                if stream.url == data.url {
-                    stream.description = String::from(&data.description);
-                    stream.is_live = data.is_live;
-                }
+            if let Some(index) = self.inner.iter().position(|st| st.url == data.url) {
+                self.inner[index].description = String::from(&data.description);
+                self.inner[index].is_live = data.is_live;
             }
         }
 
