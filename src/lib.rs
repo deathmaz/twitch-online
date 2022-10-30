@@ -154,6 +154,11 @@ impl StreamList {
         self.show_only_live();
     }
 
+    pub fn fetch_all_and_play(&mut self) {
+        self.fetch_all();
+        play_stream(self);
+    }
+
     pub fn show_all(&mut self) {
         println!();
         println!("Displaying all data:");
@@ -216,7 +221,7 @@ pub fn main_menu(stream_list: &mut StreamList) {
         };
         match input.as_str() {
             "1" => stream_list.show_all(),
-            "2" => stream_list.fetch_all_and_show(),
+            "2" => stream_list.fetch_all_and_play(),
             "3" => play_stream(stream_list),
             "4" => stream_list.show_only_live(),
             _ => continue,
