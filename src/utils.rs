@@ -1,9 +1,10 @@
+use ansi_term::Colour::{Blue, Green};
 use scraper::{Html, Selector};
 use serde_json::Value;
-use std::error::Error;
+use spinners::Spinner;
+use std::io;
 use std::process::{Command, Output, Stdio};
 use std::sync::mpsc::Sender;
-use std::{fs, io};
 
 use crate::stream_list::StreamList;
 
@@ -20,6 +21,7 @@ pub fn fetch_page(url: &str) -> io::Result<Output> {
 }
 
 pub fn fetch(url: &str, tx: Sender<ChannelData>) {
+    let mut sp = Spinner::new(spinners::Spinners::Dots, format!("Fetching {url}").into());
     let output = fetch_page(url);
     match output {
         Ok(result) => {
@@ -50,6 +52,7 @@ pub fn fetch(url: &str, tx: Sender<ChannelData>) {
         }
         Err(e) => println!("Error, {}", e),
     }
+    sp.stop();
 }
 
 pub fn play_stream(stream_list: &mut StreamList) {
@@ -59,7 +62,7 @@ pub fn play_stream(stream_list: &mut StreamList) {
         return;
     }
     stream_list.show_only_live();
-    println!("Type the number of the stream:");
+    println!("To play, type the number of the stream:");
     let number = match get_stream_number() {
         Some(num) => num,
         None => return,
@@ -68,7 +71,12 @@ pub fn play_stream(stream_list: &mut StreamList) {
     let stream = stream_list.get_item(number);
     match stream {
         Some(str) => {
-            println!("Starting stream: {}", &str.url);
+            clear_screen();
+            println!(
+                "{} {}",
+                Green.bold().paint("Playing stream:"),
+                Blue.paint(&str.url),
+            );
             if let Err(e) = Command::new("streamlink")
                 .arg(&str.url)
                 .stdout(Stdio::null())
@@ -112,12 +120,6 @@ pub fn get_input() -> Option<String> {
     }
 }
 
-pub fn read_users(path: &String) -> Result<Vec<String>, Box<dyn Error>> {
-    let contents = fs::read_to_string(path)?;
-
-    let mut lines = vec![];
-    for line in contents.lines() {
-        lines.push(line.to_string());
-    }
-    Ok(lines)
+pub fn clear_screen() {
+    print!("\x1B[2J\x1B[1;1H");
 }

@@ -1,4 +1,7 @@
-use crate::{stream_list::StreamList, utils};
+use crate::{
+    stream_list::StreamList,
+    utils::{self, clear_screen},
+};
 
 pub fn run(stream_list: &mut StreamList) {
     fn show() {
@@ -18,6 +21,7 @@ pub fn run(stream_list: &mut StreamList) {
             Some(input) => input,
             None => return,
         };
+        clear_screen();
         match input.as_str() {
             "1" => stream_list.show_all(),
             "2" => stream_list.fetch_all_and_play(),

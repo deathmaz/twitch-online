@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use twitch_online::{read_users, run};
+use twitch_online::{run, Config};
 extern crate directories;
 use directories::UserDirs;
 
@@ -12,8 +12,7 @@ fn main() {
             None => panic!("Can't find home dir!"),
         }
     }
-    let path = PathBuf::from(format!("{}/.config/twitch-online/users", home));
-
-    let stream_ids = read_users(&path.display().to_string()).expect("Error while reading users");
-    run(stream_ids);
+    let path = PathBuf::from(format!("{}/.config/twitch-online/config.toml", home));
+    let config = Config::from(&path.display().to_string()).unwrap();
+    run(config);
 }

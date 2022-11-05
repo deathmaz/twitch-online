@@ -1,52 +1,53 @@
 use crate::stream::Stream;
-use crate::utils;
-use spinners::Spinner;
-use std::{mem, thread};
-
+use crate::thread_pool::ThreadPool;
+use crate::utils::clear_screen;
+use crate::{utils, Config};
 use std::sync::mpsc;
+use std::{mem, thread};
 
 #[derive(Debug)]
 pub struct StreamList {
     pub inner: Vec<Stream>,
-}
-
-impl Default for StreamList {
-    fn default() -> Self {
-        Self::new()
-    }
+    pub thread_pool: Option<ThreadPool>,
+    pub config: Config,
 }
 
 impl StreamList {
-    pub fn new() -> Self {
-        Self { inner: Vec::new() }
-    }
+    pub fn new(config: Config) -> Self {
+        let pool = match config.threads_num {
+            Some(num) => Some(ThreadPool::new(num)),
+            None => None,
+        };
 
-    pub fn from(ids: Vec<String>) -> Self {
-        let mut list = Self::new();
-        list.create_from_ids(ids);
-        list
-    }
+        let mut inner = Vec::with_capacity(config.streamers.len());
+        for (index, id) in config.streamers.iter().enumerate() {
+            inner.push(Stream::new(id, index));
+        }
 
-    pub fn add(&mut self, stream: Stream) {
-        self.inner.push(stream)
-    }
-
-    pub fn create_from_ids(&mut self, ids: Vec<String>) {
-        for (index, id) in ids.iter().enumerate() {
-            self.add(Stream::new(id, index))
+        Self {
+            inner,
+            thread_pool: pool,
+            config,
         }
     }
 
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
-        println!();
-        let mut sp = Spinner::new(spinners::Spinners::Dots, "Fetching all streams".into());
         for stream in &mut self.inner {
-            let tx_cloned = tx.clone();
             let url = String::from(&stream.url);
-            thread::spawn(move || {
-                utils::fetch(&url, tx_cloned);
-            });
+            let tx_cloned = tx.clone();
+            match &self.thread_pool {
+                Some(pool) => {
+                    pool.execute(move || {
+                        utils::fetch(&url, tx_cloned);
+                    });
+                }
+                None => {
+                    thread::spawn(move || {
+                        utils::fetch(&url, tx_cloned);
+                    });
+                }
+            }
         }
 
         mem::drop(tx);
@@ -59,8 +60,6 @@ impl StreamList {
         }
 
         self.inner.sort_by(|a, b| a.index.cmp(&b.index));
-
-        sp.stop_with_message("".into());
     }
 
     pub fn _fetch_all_and_show(&mut self) {
@@ -74,7 +73,6 @@ impl StreamList {
     }
 
     pub fn show_all(&mut self) {
-        println!();
         println!("Displaying all data:");
         self.inner.sort_by(|a, b| b.is_live.cmp(&a.is_live));
         for stream in &self.inner {
@@ -89,6 +87,7 @@ impl StreamList {
     }
 
     pub fn show_only_live(&mut self) {
+        clear_screen();
         let live_streams = self.get_live_streams();
 
         for stream in live_streams {
