@@ -6,6 +6,7 @@ use ansi_term::{
 #[derive(Debug)]
 pub struct Stream {
     pub url: String,
+    pub displayed_url: String,
     pub is_live: bool,
     pub description: String,
     pub index: usize,
@@ -15,6 +16,7 @@ impl Stream {
     pub fn new(id: &str, index: usize) -> Self {
         Self {
             url: format!("https://m.twitch.tv/{}", id),
+            displayed_url: format!("https://twitch.tv/{}", id),
             is_live: false,
             description: String::new(),
             index,
@@ -32,7 +34,7 @@ impl Stream {
         println!(
             "{} {} is {}",
             Green.bold().paint(format!("{}.", self.index)),
-            Blue.paint(&self.url),
+            Blue.paint(&self.displayed_url),
             self.status_text()
         );
         println!("Streaming: {}", Purple.paint(self.description.to_string()));

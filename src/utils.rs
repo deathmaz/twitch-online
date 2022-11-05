@@ -75,7 +75,7 @@ pub fn play_stream(stream_list: &mut StreamList) {
             println!(
                 "{} {}",
                 Green.bold().paint("Playing stream:"),
-                Blue.paint(&str.url),
+                Blue.paint(&str.displayed_url),
             );
             if let Err(e) = Command::new("streamlink")
                 .arg(&str.url)

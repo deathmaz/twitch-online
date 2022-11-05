@@ -1,7 +1,7 @@
 `twitch-online` checks if twitch streamers are currently online.
 It has minimal TUI. It's also possible to play the stream via [streamlink](https://github.com/streamlink/streamlink).
 
-![image](https://user-images.githubusercontent.com/6440135/200137559-79530e6e-66e6-4d4a-9f22-abb01e503ecb.png)
+![image](https://user-images.githubusercontent.com/6440135/200138375-64f7925f-d503-4d2a-b1a9-cddd3c92fb04.png)
 
 ## Requirements
 
