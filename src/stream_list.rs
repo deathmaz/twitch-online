@@ -14,10 +14,7 @@ pub struct StreamList {
 
 impl StreamList {
     pub fn new(config: Config) -> Self {
-        let pool = match config.threads_num {
-            Some(num) => Some(ThreadPool::new(num)),
-            None => None,
-        };
+        let pool = config.threads_num.map(ThreadPool::new);
 
         let mut inner = Vec::with_capacity(config.streamers.len());
         for (index, id) in config.streamers.iter().enumerate() {

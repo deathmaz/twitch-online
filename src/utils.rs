@@ -21,7 +21,7 @@ pub fn fetch_page(url: &str) -> io::Result<Output> {
 }
 
 pub fn fetch(url: &str, tx: Sender<ChannelData>) {
-    let mut sp = Spinner::new(spinners::Spinners::Dots, format!("Fetching {url}").into());
+    let mut sp = Spinner::new(spinners::Spinners::Dots, format!("Fetching {url}"));
     let output = fetch_page(url);
     match output {
         Ok(result) => {
