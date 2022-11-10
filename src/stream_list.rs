@@ -2,6 +2,7 @@ use crate::stream::Stream;
 use crate::thread_pool::ThreadPool;
 use crate::utils::clear_screen;
 use crate::{utils, Config};
+use indicatif::ProgressBar;
 use std::sync::mpsc;
 use std::{mem, thread};
 
@@ -30,6 +31,7 @@ impl StreamList {
 
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
+        let pb = ProgressBar::new(self.inner.len().try_into().unwrap());
         for stream in &mut self.inner {
             let url = String::from(&stream.url);
             let tx_cloned = tx.clone();
@@ -50,6 +52,7 @@ impl StreamList {
         mem::drop(tx);
 
         for data in rx {
+            pb.inc(1);
             if let Some(index) = self.inner.iter().position(|st| st.url == data.url) {
                 self.inner[index].description = String::from(&data.description);
                 self.inner[index].is_live = data.is_live;
@@ -57,6 +60,7 @@ impl StreamList {
         }
 
         self.inner.sort_by(|a, b| a.index.cmp(&b.index));
+        pb.finish_and_clear();
     }
 
     pub fn _fetch_all_and_show(&mut self) {

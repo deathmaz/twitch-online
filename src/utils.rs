@@ -1,7 +1,6 @@
 use ansi_term::Colour::{Blue, Green};
 use scraper::{Html, Selector};
 use serde_json::Value;
-use spinners::Spinner;
 use std::io;
 use std::process::{Command, Output, Stdio};
 use std::sync::mpsc::Sender;
@@ -21,7 +20,6 @@ pub fn fetch_page(url: &str) -> io::Result<Output> {
 }
 
 pub fn fetch(url: &str, tx: Sender<ChannelData>) {
-    let mut sp = Spinner::new(spinners::Spinners::Dots, format!("Fetching {url}"));
     let output = fetch_page(url);
     match output {
         Ok(result) => {
@@ -52,7 +50,6 @@ pub fn fetch(url: &str, tx: Sender<ChannelData>) {
         }
         Err(e) => println!("Error, {}", e),
     }
-    sp.stop();
 }
 
 pub fn play_stream(stream_list: &mut StreamList) {
