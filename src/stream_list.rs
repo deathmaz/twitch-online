@@ -2,7 +2,7 @@ use crate::stream::Stream;
 use crate::thread_pool::ThreadPool;
 use crate::utils::clear_screen;
 use crate::{utils, Config};
-use indicatif::ProgressBar;
+use indicatif::{ProgressBar, ProgressStyle};
 use std::sync::mpsc;
 use std::{mem, thread};
 
@@ -32,6 +32,9 @@ impl StreamList {
     pub fn fetch_all(&mut self) {
         let (tx, rx) = mpsc::channel();
         let pb = ProgressBar::new(self.inner.len().try_into().unwrap());
+        pb.set_style(
+            ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}]").unwrap(),
+        );
         for stream in &mut self.inner {
             let url = String::from(&stream.url);
             let tx_cloned = tx.clone();
