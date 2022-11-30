@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::{error::Error, fs};
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Default)]
 pub struct Config {
     pub streamers: Vec<String>,
     pub threads_num: Option<usize>,

@@ -3,7 +3,7 @@ use ansi_term::{
     Colour::{Blue, Green, Purple, Red},
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Stream {
     pub url: String,
     pub displayed_url: String,

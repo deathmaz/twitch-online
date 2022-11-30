@@ -6,7 +6,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use std::sync::mpsc;
 use std::{mem, thread};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct StreamList {
     pub inner: Vec<Stream>,
     pub thread_pool: Option<ThreadPool>,
