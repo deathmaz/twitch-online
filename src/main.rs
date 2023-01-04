@@ -13,6 +13,12 @@ fn main() {
         }
     }
     let path = PathBuf::from(format!("{}/.config/twitch-online/config.toml", home));
-    let config = Config::from(&path.display().to_string()).unwrap();
-    run(config);
+    let config = Config::from(&path.display().to_string());
+    match config {
+        Ok(config) => run(config),
+        Err(error) => println!(
+            "Something went wrong while reading config.toml file:\n{:#}",
+            error
+        ),
+    }
 }
